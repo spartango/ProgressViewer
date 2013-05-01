@@ -15,6 +15,8 @@
 {
     @outlet CPWindow         theWindow;
     @outlet CPCollectionView progressCollection;
+
+    CPTimer timer;
 }
 
 - (void)applicationDidFinishLaunching:(CPNotification)aNotification
@@ -28,32 +30,52 @@
     // You can implement this method on any object instantiated from a Cib.
     // It's a useful hook for setting up current UI values, and other things.
 
+    // This is called when the application is done loading.
     // In this case, we want the window from Cib to become our full browser window
     [theWindow setFullPlatformWindow:YES];
+    var bounds = [progressCollection bounds]
+    [progressCollection setMinItemSize:CGSizeMake(bounds.size.width - 20, 60)];
+    [progressCollection setMaxItemSize:CGSizeMake(bounds.size.width - 20, 60)];
 
-    // This is called when the application is done loading.
-    console.log("Loading test objects");
+    [CPTimer scheduledTimerWithTimeInterval:3 target:self selector:@selector(refresh:) userInfo:nil repeats:YES];
 
-    var testObjects = [
-        [[ProgressModel alloc] initWithObject:{"id": 1, "type": "test", "complete": 1000, "request": 2000, "failed": 3}],
-        [[ProgressModel alloc] initWithObject:{"id": 2, "type": "test 2", "complete": 500, "request": 2000, "failed": 6}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 4, "type": "test 4", "complete": 1200, "request": 2000, "failed": 12}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-        [[ProgressModel alloc] initWithObject:{"id": 3, "type": "test 3", "complete": 200, "request": 2000, "failed": 9}],
-    ];
+}
 
-    console.log(testObjects);
-    console.log(progressCollection);
+- (void)refresh:(CPTimer)timer
+{
+    console.log("Requesting status update");
+    // Request the status info
+    var request = [CPURLRequest requestWithURL:"resources/testData.json"];
+    var connection = [CPURLConnection connectionWithRequest:request delegate:self];
+}
 
-    //debugger;
-    [progressCollection setContent:testObjects];
+ - (void)connection:(CPURLConnection)connection didReceiveData:(CPString)data
+{
+    console.log("Got status update");
 
-    console.log("Set collection content");
+    var result = CPJSObjectCreateWithJSON(data);
+
+    // Get the pipeline array out
+    var pipes = result['pipeline'];
+
+    var models = [];
+
+    for(var i=0; i < pipes.length; i++) {
+        // Build a ProgressModel from each structure
+        var model = [[ProgressModel alloc] initWithObject:pipes[i]];
+        models.push(model);
+    }
+
+    console.log("Updating views");
+    [progressCollection setContent: models];
+}
+
+
+
+- (void)connection:(CPURLConnection)connection didFailWithError:(CPString)error
+{
+    //This method is called if the request fails for any reason.
+    console.log("Error getting status update");
 
 }
 

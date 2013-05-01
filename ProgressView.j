@@ -13,9 +13,6 @@
 
 - (void)setRepresentedObject:(id)anObject
 {
-    //[self setBackgroundColor:[CPColor redColor]];
-    //[self setBounds:CGRectMake(0, 0, 400, 60)];
-    console.log("Loading "+self+" from "+anObject);
     if(anObject) {
         // The object represented will be a ProgressModel
         [pipeLabel setStringValue: [anObject name]];
@@ -29,7 +26,6 @@
         [progressIndicator setMaxValue: [anObject request]];
         [progressIndicator setIndeterminate:NO];
         [progressIndicator setDoubleValue: [anObject complete]];
-        console.log("Loaded object");
     }
 }
 
